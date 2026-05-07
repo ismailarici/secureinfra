@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test — Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+
+      - name: Run unit and integration tests
+        run: python3 -m pytest tests/ -v
+
+      - name: Run end-to-end pipeline test (example data)
+        run: python3 scripts/test_pipeline.py
+
+      - name: Validate normalized example against schema
+        run: |
+          python3 - <<'EOF'
+          import json, jsonschema, pathlib, sys
+
+          schema = json.loads(pathlib.Path("schemas/event.schema.json").read_text())
+          jsonl_files = list(pathlib.Path("examples/normalized").glob("*.jsonl"))
+
+          if not jsonl_files:
+              print("No JSONL files found — skipping schema validation")
+              sys.exit(0)
+
+          errors = 0
+          total = 0
+          for f in jsonl_files:
+              for line in f.read_text().splitlines():
+                  line = line.strip()
+                  if not line:
+                      continue
+                  event = json.loads(line)
+                  total += 1
+                  try:
+                      jsonschema.validate(instance=event, schema=schema)
+                  except jsonschema.ValidationError as e:
+                      print(f"FAIL {event.get('event_id')}: {e.message}")
+                      errors += 1
+
+          print(f"{total - errors}/{total} events passed schema validation")
+          sys.exit(1 if errors else 0)
+          EOF
