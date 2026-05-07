@@ -1,99 +1,89 @@
 # SecureInfra
 
-Portable infrastructure and cloud security normalization layer.
+**Infrastructure and cloud security normalization layer.**
 
-SecureInfra runs cloud posture checks against your AWS (and future GCP/Azure) environments, normalizes the findings into a provider-neutral event schema, and exports them for consumption by SecureOps.
+SecureInfra scans your cloud accounts for security misconfigurations, normalizes every finding into a provider-neutral event format, and exports them ready for [SecureOps](https://github.com/ismailarici/secureops) to ingest.
 
----
-
-## Part of a modular security platform
-
-| Component | Role |
-|-----------|------|
-| **SecurePipe** | Application security — SAST, SCA, DAST, CI/CD scanning |
-| **SecureInfra** | Infrastructure security — CSPM, cloud posture, infra vulnerability normalization |
-| **SecureOps** | SIEM/XDR + orchestration — ingests SecurePipe and SecureInfra outputs, routes to Wazuh, alerts, produces audit evidence |
-
-SecureInfra sits between your cloud accounts and SecureOps. It does not implement SIEM logic. It is a **producer** only.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 
 ---
 
-## Design philosophy
+## Part of a modular open-source security platform
 
-- **Portable** — provider-neutral event schema; cloud specifics are isolated to provider modules
-- **Config-driven** — organization, account, environment, and output paths in `config/config.yaml`
-- **Modular** — runner → parser → normalizer → exporter; each step is independently replaceable
-- **Minimal** — no Kafka, no queues, no agent sprawl; runs as a simple Python pipeline
-- **Audit-ready** — raw findings preserved alongside normalized events
+| Component | What it does |
+|-----------|-------------|
+| [**SecurePipe**](https://github.com/ismailarici/securepipe) | Application security — SAST, SCA, DAST, CI/CD scanning |
+| **SecureInfra** ← you are here | Infrastructure security — cloud posture scanning and normalization |
+| [**SecureOps**](https://github.com/ismailarici/secureops) | SIEM/XDR layer — ingests SecurePipe + SecureInfra, routes to Wazuh, alerts, produces audit evidence |
 
----
-
-## Supported providers (v0)
-
-| Provider | Status |
-|----------|--------|
-| AWS | Supported |
-| GCP | Roadmap |
-| Azure | Roadmap |
-
-## Supported scanners/tools (v0)
-
-| Tool | Provider | Status |
-|------|----------|--------|
-| Prowler | AWS | Supported |
-| OpenVAS | Any | Roadmap |
-| Nessus | Any | Roadmap |
+SecureInfra sits between your cloud accounts and SecureOps. It does **not** alert, route, or store events — it is a **producer** only.
 
 ---
 
-## Current scope (v0)
+## What it does
 
-- AWS account scanning via Prowler
-- Prowler JSON output parsing
-- Normalization to SecureOps event schema
-- Local file export (JSONL and per-event JSON)
-- Schema validation against SecureOps event schema
+1. Runs [Prowler](https://github.com/prowler-cloud/prowler) against your AWS account (via Docker or native)
+2. Parses and filters the raw findings (FAIL/WARN, above your configured severity threshold)
+3. Normalizes every finding into the shared SecureOps event schema (v1.0)
+4. Validates each event against the JSON schema
+5. Writes normalized events to disk — one JSON file per finding plus a JSONL bundle
 
-## Future scope
-
-See [docs/roadmap.md](docs/roadmap.md).
+SecureOps can then pick up those files and route them to Wazuh, DefectDojo, Slack, and email.
 
 ---
 
-## Architecture overview
+## Supported providers and tools
+
+| Cloud | Scanner | Status |
+|-------|---------|--------|
+| AWS | Prowler | Supported |
+| GCP | Prowler | Roadmap |
+| Azure | Prowler | Roadmap |
+
+---
+
+## How the pipeline works
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                     SecureInfra                      │
-│                                                     │
-│  config/config.yaml                                 │
-│         │                                           │
-│         ▼                                           │
-│  prowler/runner  ──► Prowler (Docker/native)        │
-│         │                                           │
-│         ▼                                           │
-│  prowler/parsers ──► raw finding list               │
-│         │                                           │
-│         ▼                                           │
-│  prowler/normalizers ──► SecureOps event schema     │
-│         │                                           │
-│         ▼                                           │
-│  integrations/secureops ──► outputs/ (local JSON)   │
-│                         └──► [future] SecureOps API  │
-└─────────────────────────────────────────────────────┘
-```
+AWS Account
+    │
+    ▼
+scripts/run_prowler.sh          ← runs Prowler via Docker
+    │
+    ▼
+outputs/prowler/prowler_output.json   ← raw Prowler JSON
 
-Event schema: `schemas/event.schema.json` (mirrors SecureOps v1.0 schema)
+    │
+    ▼
+prowler/parsers/prowler.py      ← loads + filters (FAIL/WARN, severity)
+    │
+    ▼
+prowler/normalizers/prowler.py  ← maps to SecureOps event schema
+    │
+    ▼
+integrations/secureops/exporter.py   ← validates schema, writes files
+    │
+    ▼
+outputs/normalized/             ← SecureOps-ready events (JSON + JSONL)
+```
 
 ---
 
 ## Quickstart
 
-### 1. Install dependencies
+### Requirements
+
+- Python 3.10+
+- Docker (for running Prowler) — or Prowler installed natively
+- Valid AWS credentials (environment variables or `~/.aws/credentials`)
+
+### 1. Clone and install
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+git clone https://github.com/ismailarici/secureinfra.git
+cd secureinfra
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -101,16 +91,31 @@ pip install -r requirements.txt
 
 ```bash
 cp config/example.aws.yaml config/config.yaml
-# Edit config/config.yaml with your AWS account details
 ```
 
-### 3. Run Prowler
+Edit `config/config.yaml` with your AWS account details:
 
-Requires Docker or Prowler installed natively.
+```yaml
+organization: your-org
+environment: production
+
+aws:
+  account_id: "123456789012"
+  region: us-east-1
+  profile: default
+
+prowler:
+  enabled: true
+  severity_filter: [critical, high, medium]
+```
+
+### 3. Run a scan
 
 ```bash
 bash scripts/run_prowler.sh
 ```
+
+This runs Prowler via Docker and writes raw findings to `outputs/prowler/prowler_output.json`.
 
 ### 4. Normalize findings
 
@@ -121,63 +126,83 @@ python3 scripts/normalize_findings.py \
   --output outputs/normalized
 ```
 
-### 5. Run end-to-end test against example data
+Normalized events land in `outputs/normalized/` — one JSON per finding plus a `_events.jsonl` bundle.
+
+### 5. Test without AWS credentials
+
+Run the full pipeline against the bundled sample data (no Docker, no AWS needed):
 
 ```bash
 python3 scripts/test_pipeline.py
 ```
 
----
+Expected output:
 
-## Configuration reference
+```
+[test_pipeline] Loading sample Prowler findings...
+[test_pipeline] 4 findings parsed
+[test_pipeline] Normalizing to SecureOps event schema...
+[test_pipeline] 4 events produced
+[test_pipeline] Validating schema and writing to examples/normalized/...
+[test_pipeline] 5 files written
 
-See `config/example.aws.yaml` for a fully annotated example.
+[test_pipeline] Event summary:
+  [CRITICAL] Ensure MFA is enabled for the root account
+  [HIGH    ] Ensure S3 buckets do not allow public access
+  [MEDIUM  ] Ensure CloudTrail is enabled in all regions
+  [MEDIUM  ] Ensure EC2 instances use IMDSv2
 
-Key sections:
-
-```yaml
-organization: acme-corp
-environment: production
-
-aws:
-  account_id: "123456789012"
-  region: us-east-1
-
-prowler:
-  enabled: true
-  severity_filter: [critical, high, medium]
-
-outputs:
-  local_path: outputs/normalized
-
-integrations:
-  secureops:
-    enabled: false
-    endpoint: null     # TODO: set when SecureOps API is available
+[test_pipeline] PASS — pipeline ran end-to-end cleanly
 ```
 
 ---
 
-## Project structure
+## Event schema
 
+Every normalized finding is a JSON object conforming to the [SecureOps event schema v1.0](schemas/event.schema.json).
+
+Example normalized event:
+
+```json
+{
+  "event_id": "a3f1c2d4-0001-4b5e-9f3a-1234abcd5678",
+  "timestamp": "2026-05-07T08:00:00+00:00",
+  "ingested_at": "2026-05-07T08:00:01+00:00",
+  "schema_version": "1.0",
+  "source": {
+    "component": "secureinfra",
+    "tool": "prowler",
+    "environment": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "account_id": "123456789012"
+  },
+  "event_type": "vulnerability",
+  "severity": "critical",
+  "title": "Ensure MFA is enabled for the root account",
+  "description": "The root account is the most privileged user in an AWS account...",
+  "tags": ["cspm", "prowler", "aws", "iam", "critical"],
+  "payload": {
+    "remediation": "Enable MFA for the root account via IAM → Security credentials.",
+    "references": ["https://docs.aws.amazon.com/IAM/latest/UserGuide/..."],
+    "check_id": "iam_root_mfa_enabled",
+    "status": "FAIL",
+    "status_extended": "MFA is not enabled for the root account.",
+    "resource_id": "arn:aws:iam::123456789012:root",
+    "service": "iam",
+    "compliance": [
+      {
+        "framework": "CIS-AWS-Foundations-Benchmark",
+        "version": "1.4",
+        "requirements": ["1.5"]
+      }
+    ],
+    "finding_unique_id": "prowler-aws-iam_root_mfa_enabled-123456789012-us-east-1"
+  }
+}
 ```
-secureinfra/
-├── config/            # Config templates (real config.yaml is git-ignored)
-├── docs/              # Architecture, roadmap, event-mapping docs
-├── prowler/
-│   ├── runner/        # Executes Prowler (Docker or native)
-│   ├── parsers/       # Loads and validates raw Prowler JSON
-│   └── normalizers/   # Converts Prowler findings → SecureOps events
-├── integrations/
-│   └── secureops/     # Local export + future API integration
-├── examples/
-│   ├── raw/           # Sample Prowler output
-│   └── normalized/    # Sample normalized SecureOps events
-├── outputs/           # Runtime output (git-ignored)
-├── schemas/           # SecureOps event schema (v1.0)
-├── scripts/           # Run, normalize, test scripts
-└── tests/             # Parser and normalizer unit tests
-```
+
+See [docs/event-mapping.md](docs/event-mapping.md) for a full field-by-field mapping table.
 
 ---
 
@@ -187,8 +212,80 @@ secureinfra/
 python3 -m pytest tests/ -v
 ```
 
+```
+22 passed in 0.10s
+```
+
+Tests cover: parser filtering, severity mapping, normalizer field mapping, compliance extraction, schema validation, and full end-to-end pipeline.
+
 ---
 
-## Contributing
+## Project structure
 
-This project is part of a private modular security platform. All commits must be pushed as **ismailarici**.
+```
+secureinfra/
+├── config/                  # Config templates (config.yaml is git-ignored)
+│   ├── example.aws.yaml
+│   ├── example.gcp.yaml     # placeholder — GCP on roadmap
+│   └── example.azure.yaml   # placeholder — Azure on roadmap
+├── docs/
+│   ├── architecture.md      # Design, event flow, portability approach
+│   ├── event-mapping.md     # Prowler field → SecureOps schema mapping
+│   └── roadmap.md           # Planned future capabilities
+├── prowler/
+│   ├── runner/              # Executes Prowler (Docker or native)
+│   ├── parsers/             # Loads + filters raw Prowler JSON
+│   └── normalizers/         # Maps findings to SecureOps event schema
+├── integrations/
+│   └── secureops/           # Local export + future API forwarding
+├── examples/
+│   ├── raw/                 # Sample Prowler output
+│   └── normalized/          # Sample normalized SecureOps events
+├── schemas/
+│   └── event.schema.json    # SecureOps event schema v1.0
+├── scripts/
+│   ├── run_prowler.sh       # Run Prowler via Docker
+│   ├── normalize_findings.py # CLI: parse + normalize + export
+│   └── test_pipeline.py     # End-to-end test using example data
+├── tests/                   # Unit + integration tests (pytest)
+├── outputs/                 # Runtime output — git-ignored
+├── LICENSE
+└── README.md
+```
+
+---
+
+## Design principles
+
+- **Producer only** — SecureInfra generates normalized findings. Routing, alerting, and storage belong in SecureOps.
+- **Config-driven** — no hardcoded account IDs, regions, or org names in code.
+- **Portable schema** — the event schema is provider-neutral. Adding GCP or Azure means adding a new normalizer module; the exporter and SecureOps integration stay unchanged.
+- **Audit-ready** — raw Prowler findings are preserved in the `raw` field of every event.
+- **No overengineering** — no Kafka, no queues, no agents. A simple Python pipeline you can run in CI or on a schedule.
+
+---
+
+## Connecting to SecureOps
+
+Once normalized events are in `outputs/normalized/`, point SecureOps at that directory:
+
+```bash
+# In your SecureOps project:
+python3 -m normalizer.main \
+  --input /path/to/secureinfra/outputs/normalized \
+  --config config/config.yaml
+```
+
+SecureOps will ingest the JSONL bundle, route findings to Wazuh and DefectDojo, and write audit evidence.
+
+---
+
+## Roadmap
+
+See [docs/roadmap.md](docs/roadmap.md) for planned features including GCP/Azure support, drift detection, CIS benchmark tagging, and host-based scanning.
+
+---
+
+## License
+
+[MIT](LICENSE) — © 2026 Ismail Arici
