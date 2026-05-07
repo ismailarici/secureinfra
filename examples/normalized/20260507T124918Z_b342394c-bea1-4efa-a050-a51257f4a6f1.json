@@ -1,0 +1,107 @@
+{
+  "event_id": "b342394c-bea1-4efa-a050-a51257f4a6f1",
+  "timestamp": "2026-05-07T08:01:00+00:00",
+  "ingested_at": "2026-05-07T12:49:18.961841+00:00",
+  "schema_version": "1.0",
+  "source": {
+    "component": "secureinfra",
+    "tool": "prowler",
+    "environment": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "account_id": "123456789012"
+  },
+  "event_type": "vulnerability",
+  "severity": "high",
+  "title": "Ensure S3 buckets do not allow public access",
+  "description": "Amazon S3 buckets can be configured to allow public access. Allowing public access to S3 buckets can expose sensitive data to the internet.\n\nStatus: Bucket acme-data-archive has public read access enabled via bucket ACL.\n\nRisk: Public read access to an S3 bucket can allow anyone on the internet to read or download the bucket's contents, potentially exposing sensitive or confidential data.",
+  "tags": [
+    "cspm",
+    "prowler",
+    "aws",
+    "s3",
+    "high"
+  ],
+  "payload": {
+    "cve_id": null,
+    "cwe_id": null,
+    "affected_file": null,
+    "affected_line": null,
+    "affected_package": null,
+    "affected_version": null,
+    "fixed_version": null,
+    "remediation": "Enable S3 Block Public Access settings on the bucket to prevent public access.",
+    "references": [
+      "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+    ],
+    "check_id": "s3_bucket_public_access",
+    "status": "FAIL",
+    "status_extended": "Bucket acme-data-archive has public read access enabled via bucket ACL.",
+    "resource_id": "arn:aws:s3:::acme-data-archive",
+    "service": "s3",
+    "risk": "Public read access to an S3 bucket can allow anyone on the internet to read or download the bucket's contents, potentially exposing sensitive or confidential data.",
+    "compliance": [
+      {
+        "framework": "CIS-AWS-Foundations-Benchmark",
+        "version": "1.4",
+        "requirements": [
+          "2.1.2"
+        ]
+      }
+    ],
+    "finding_unique_id": "prowler-aws-s3_bucket_public_access-123456789012-us-east-1-acme-data-archive"
+  },
+  "raw": {
+    "Provider": "aws",
+    "CheckID": "s3_bucket_public_access",
+    "CheckTitle": "Ensure S3 buckets do not allow public access",
+    "CheckType": [],
+    "ServiceName": "s3",
+    "SubServiceName": "",
+    "Status": "FAIL",
+    "StatusExtended": "Bucket acme-data-archive has public read access enabled via bucket ACL.",
+    "Severity": "high",
+    "ResourceType": "AWS::S3::Bucket",
+    "ResourceId": "arn:aws:s3:::acme-data-archive",
+    "ResourceArn": "arn:aws:s3:::acme-data-archive",
+    "ResourceDetails": "",
+    "Description": "Amazon S3 buckets can be configured to allow public access. Allowing public access to S3 buckets can expose sensitive data to the internet.",
+    "Risk": "Public read access to an S3 bucket can allow anyone on the internet to read or download the bucket's contents, potentially exposing sensitive or confidential data.",
+    "RelatedUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
+    "Remediation": {
+      "Code": {
+        "CLI": "aws s3api put-public-access-block --bucket acme-data-archive --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true",
+        "NativeIaC": "",
+        "Other": "",
+        "Terraform": "resource \"aws_s3_bucket_public_access_block\" \"example\" { bucket = \"acme-data-archive\" block_public_acls = true block_public_policy = true ignore_public_acls = true restrict_public_buckets = true }"
+      },
+      "Recommendation": {
+        "Text": "Enable S3 Block Public Access settings on the bucket to prevent public access.",
+        "Url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+      }
+    },
+    "Categories": [
+      "software_and_configuration_checks"
+    ],
+    "DependsOn": [],
+    "RelatedTo": [],
+    "Notes": "",
+    "Compliance": [
+      {
+        "Framework": "CIS-AWS-Foundations-Benchmark",
+        "Version": "1.4",
+        "Requirements": [
+          {
+            "Id": "2.1.2",
+            "Description": "Ensure S3 bucket policy is set to deny HTTP requests"
+          }
+        ]
+      }
+    ],
+    "Timestamp": "2026-05-07T08:01:00.000000",
+    "AccountId": "123456789012",
+    "Region": "us-east-1",
+    "FindingUniqueId": "prowler-aws-s3_bucket_public_access-123456789012-us-east-1-acme-data-archive",
+    "MutedReason": ""
+  }
+}

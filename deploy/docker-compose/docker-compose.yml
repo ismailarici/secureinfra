@@ -1,0 +1,15 @@
+# SecureInfra — Docker Compose (v0 placeholder)
+#
+# v0 has no persistent services to run. This file is a placeholder for future additions.
+#
+# Potential future services:
+#   - A scheduled Prowler runner container
+#   - A SecureOps forwarder sidecar
+#   - A findings dashboard (lightweight)
+#
+# For now, run Prowler directly via scripts/run_prowler.sh
+
+version: "3.9"
+
+# TODO: add services when persistent infrastructure is needed
+services: {}

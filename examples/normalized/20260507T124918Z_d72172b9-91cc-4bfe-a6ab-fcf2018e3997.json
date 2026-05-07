@@ -1,0 +1,125 @@
+{
+  "event_id": "d72172b9-91cc-4bfe-a6ab-fcf2018e3997",
+  "timestamp": "2026-05-07T08:00:00+00:00",
+  "ingested_at": "2026-05-07T12:49:18.961841+00:00",
+  "schema_version": "1.0",
+  "source": {
+    "component": "secureinfra",
+    "tool": "prowler",
+    "environment": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "account_id": "123456789012"
+  },
+  "event_type": "vulnerability",
+  "severity": "critical",
+  "title": "Ensure MFA is enabled for the root account",
+  "description": "The root account is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a username and password. With MFA enabled, when a user signs in to an AWS Management Console, they will be prompted for their username and password as well as for an authentication code from their AWS MFA device.\n\nStatus: MFA is not enabled for the root account.\n\nRisk: If MFA is not enabled for the root account, an attacker who gains access to the root credentials could have full control over the entire AWS account.",
+  "tags": [
+    "cspm",
+    "prowler",
+    "aws",
+    "iam",
+    "critical"
+  ],
+  "payload": {
+    "cve_id": null,
+    "cwe_id": null,
+    "affected_file": null,
+    "affected_line": null,
+    "affected_package": null,
+    "affected_version": null,
+    "fixed_version": null,
+    "remediation": "Enable MFA for the root account by going to IAM \u2192 Security credentials \u2192 Assign MFA device.",
+    "references": [
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html"
+    ],
+    "check_id": "iam_root_mfa_enabled",
+    "status": "FAIL",
+    "status_extended": "MFA is not enabled for the root account.",
+    "resource_id": "arn:aws:iam::123456789012:root",
+    "service": "iam",
+    "risk": "If MFA is not enabled for the root account, an attacker who gains access to the root credentials could have full control over the entire AWS account.",
+    "compliance": [
+      {
+        "framework": "CIS-AWS-Foundations-Benchmark",
+        "version": "1.4",
+        "requirements": [
+          "1.5"
+        ]
+      },
+      {
+        "framework": "AWS-Foundational-Security-Best-Practices",
+        "version": "1.0",
+        "requirements": [
+          "IAM.9"
+        ]
+      }
+    ],
+    "finding_unique_id": "prowler-aws-iam_root_mfa_enabled-123456789012-us-east-1"
+  },
+  "raw": {
+    "Provider": "aws",
+    "CheckID": "iam_root_mfa_enabled",
+    "CheckTitle": "Ensure MFA is enabled for the root account",
+    "CheckType": [],
+    "ServiceName": "iam",
+    "SubServiceName": "",
+    "Status": "FAIL",
+    "StatusExtended": "MFA is not enabled for the root account.",
+    "Severity": "critical",
+    "ResourceType": "AWS::IAM::Root",
+    "ResourceId": "arn:aws:iam::123456789012:root",
+    "ResourceArn": "arn:aws:iam::123456789012:root",
+    "ResourceDetails": "",
+    "Description": "The root account is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a username and password. With MFA enabled, when a user signs in to an AWS Management Console, they will be prompted for their username and password as well as for an authentication code from their AWS MFA device.",
+    "Risk": "If MFA is not enabled for the root account, an attacker who gains access to the root credentials could have full control over the entire AWS account.",
+    "RelatedUrl": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html",
+    "Remediation": {
+      "Code": {
+        "CLI": "",
+        "NativeIaC": "",
+        "Other": "",
+        "Terraform": ""
+      },
+      "Recommendation": {
+        "Text": "Enable MFA for the root account by going to IAM \u2192 Security credentials \u2192 Assign MFA device.",
+        "Url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html"
+      }
+    },
+    "Categories": [
+      "software_and_configuration_checks"
+    ],
+    "DependsOn": [],
+    "RelatedTo": [],
+    "Notes": "",
+    "Compliance": [
+      {
+        "Framework": "CIS-AWS-Foundations-Benchmark",
+        "Version": "1.4",
+        "Requirements": [
+          {
+            "Id": "1.5",
+            "Description": "Ensure MFA is enabled for the root account"
+          }
+        ]
+      },
+      {
+        "Framework": "AWS-Foundational-Security-Best-Practices",
+        "Version": "1.0",
+        "Requirements": [
+          {
+            "Id": "IAM.9",
+            "Description": "Virtual MFA should be enabled for the root user"
+          }
+        ]
+      }
+    ],
+    "Timestamp": "2026-05-07T08:00:00.000000",
+    "AccountId": "123456789012",
+    "Region": "us-east-1",
+    "FindingUniqueId": "prowler-aws-iam_root_mfa_enabled-123456789012-us-east-1",
+    "MutedReason": ""
+  }
+}

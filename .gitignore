@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# Config (never commit real credentials or org-specific config)
+config/config.yaml
+config/*.aws.yaml
+config/*.gcp.yaml
+config/*.azure.yaml
+
+# Outputs (runtime artifacts — not committed)
+outputs/
+!outputs/.gitkeep
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

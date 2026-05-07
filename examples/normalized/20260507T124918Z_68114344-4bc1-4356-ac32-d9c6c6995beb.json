@@ -1,0 +1,108 @@
+{
+  "event_id": "68114344-4bc1-4356-ac32-d9c6c6995beb",
+  "timestamp": "2026-05-07T08:03:00+00:00",
+  "ingested_at": "2026-05-07T12:49:18.961841+00:00",
+  "schema_version": "1.0",
+  "source": {
+    "component": "secureinfra",
+    "tool": "prowler",
+    "environment": "production",
+    "cloud_provider": "aws",
+    "region": "us-east-1",
+    "account_id": "123456789012"
+  },
+  "event_type": "vulnerability",
+  "severity": "medium",
+  "title": "Ensure EC2 instances use IMDSv2",
+  "description": "EC2 Instance Metadata Service (IMDS) allows EC2 instances to access metadata about themselves. IMDSv2 is a more secure session-oriented method that requires a session token, preventing SSRF-based metadata theft.\n\nStatus: EC2 instance i-0abc123def456789 does not require IMDSv2.\n\nRisk: Without IMDSv2, an SSRF vulnerability in an application running on EC2 could allow an attacker to steal IAM credentials from the metadata service.",
+  "tags": [
+    "cspm",
+    "prowler",
+    "aws",
+    "ec2",
+    "medium"
+  ],
+  "payload": {
+    "cve_id": null,
+    "cwe_id": null,
+    "affected_file": null,
+    "affected_line": null,
+    "affected_package": null,
+    "affected_version": null,
+    "fixed_version": null,
+    "remediation": "Require IMDSv2 on all EC2 instances by setting HttpTokens to 'required' in instance metadata options.",
+    "references": [
+      "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-IMDS-new-instances.html",
+      "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+    ],
+    "check_id": "ec2_instance_imdsv2_enabled",
+    "status": "FAIL",
+    "status_extended": "EC2 instance i-0abc123def456789 does not require IMDSv2.",
+    "resource_id": "arn:aws:ec2:us-east-1:123456789012:instance/i-0abc123def456789",
+    "service": "ec2",
+    "risk": "Without IMDSv2, an SSRF vulnerability in an application running on EC2 could allow an attacker to steal IAM credentials from the metadata service.",
+    "compliance": [
+      {
+        "framework": "AWS-Foundational-Security-Best-Practices",
+        "version": "1.0",
+        "requirements": [
+          "EC2.8"
+        ]
+      }
+    ],
+    "finding_unique_id": "prowler-aws-ec2_instance_imdsv2_enabled-123456789012-us-east-1-i-0abc123def456789"
+  },
+  "raw": {
+    "Provider": "aws",
+    "CheckID": "ec2_instance_imdsv2_enabled",
+    "CheckTitle": "Ensure EC2 instances use IMDSv2",
+    "CheckType": [],
+    "ServiceName": "ec2",
+    "SubServiceName": "",
+    "Status": "FAIL",
+    "StatusExtended": "EC2 instance i-0abc123def456789 does not require IMDSv2.",
+    "Severity": "medium",
+    "ResourceType": "AWS::EC2::Instance",
+    "ResourceId": "arn:aws:ec2:us-east-1:123456789012:instance/i-0abc123def456789",
+    "ResourceArn": "arn:aws:ec2:us-east-1:123456789012:instance/i-0abc123def456789",
+    "ResourceDetails": "",
+    "Description": "EC2 Instance Metadata Service (IMDS) allows EC2 instances to access metadata about themselves. IMDSv2 is a more secure session-oriented method that requires a session token, preventing SSRF-based metadata theft.",
+    "Risk": "Without IMDSv2, an SSRF vulnerability in an application running on EC2 could allow an attacker to steal IAM credentials from the metadata service.",
+    "RelatedUrl": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html",
+    "Remediation": {
+      "Code": {
+        "CLI": "aws ec2 modify-instance-metadata-options --instance-id i-0abc123def456789 --http-tokens required --http-endpoint enabled",
+        "NativeIaC": "",
+        "Other": "",
+        "Terraform": ""
+      },
+      "Recommendation": {
+        "Text": "Require IMDSv2 on all EC2 instances by setting HttpTokens to 'required' in instance metadata options.",
+        "Url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-IMDS-new-instances.html"
+      }
+    },
+    "Categories": [
+      "software_and_configuration_checks"
+    ],
+    "DependsOn": [],
+    "RelatedTo": [],
+    "Notes": "",
+    "Compliance": [
+      {
+        "Framework": "AWS-Foundational-Security-Best-Practices",
+        "Version": "1.0",
+        "Requirements": [
+          {
+            "Id": "EC2.8",
+            "Description": "EC2 instances should use IMDSv2"
+          }
+        ]
+      }
+    ],
+    "Timestamp": "2026-05-07T08:03:00.000000",
+    "AccountId": "123456789012",
+    "Region": "us-east-1",
+    "FindingUniqueId": "prowler-aws-ec2_instance_imdsv2_enabled-123456789012-us-east-1-i-0abc123def456789",
+    "MutedReason": ""
+  }
+}
